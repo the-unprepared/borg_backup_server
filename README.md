@@ -4,6 +4,8 @@ Ein Backup Server zum einfachen Speichern deiner Borg Backups über ssh.
 Besonders gut für NAS mit Docker Support geeignet.  
 Der Server funktioniert nur mit der [Borg Backup](https://www.borgbackup.org/) Software.
 
+![borg_backup_server logot](https://github.com/the-unprepared/borg_backup_server/blob/main/logo.jpg)
+
 ❗ Dies ist ein Hobby Projekt !!!  
 ❗ Keine Haftung, keine Garantie.
 
