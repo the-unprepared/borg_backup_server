@@ -74,7 +74,7 @@ fi
 # Erstelle das Repository-Verzeichnis und setze Berechtigungen.
 mkdir -p "$REPO"
 chown borguser:borguser "$REPO"
-chmod 700 -R "$REPO"
+chmod 700 -R "/home/borguser"
 
 
 
