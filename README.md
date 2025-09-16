@@ -5,7 +5,6 @@ Besonders gut für NAS mit Docker Support geeignet.
 Der Server funktioniert nur mit der [Borg Backup](https://www.borgbackup.org/) Software.  
 ![](https://hub.docker.com/r/unprepared/borg_backup_server)
 
-Github Repo: [Git Hub](https://github.com/the-unprepared/borg_backup_server).  
 Docker Container: [Docker Hub](https://hub.docker.com/r/unprepared/borg_backup_server).  
 
 ![borg_backup_server logot](https://github.com/the-unprepared/borg_backup_server/blob/main/logo.jpg)
@@ -57,15 +56,15 @@ borg create                                                                 \
   ::'Rechner_Name--{now:%Y-%m-%dT%H:%M}'                                    \
   /home                                                                     \
                                                                             \
-	--verbose                                                           \
-	--filter AME                                                        \
-	--list                                                              \
-	--stats                                                             \
-	--show-rc                                                           \
-	--compression lz4                                                   \
+	--verbose                                                               \
+	--filter AME                                                            \
+	--list                                                                  \
+	--stats                                                                 \
+	--show-rc                                                               \
+	--compression lz4                                                       \
                                                                             \
-	--exclude-caches                                                    \
-	--exclude '/home/*/.local/share/Trash/*'                            \
-	--exclude '/home/*/.cache/*'                                        \
+	--exclude-caches                                                        \
+	--exclude '/home/*/.local/share/Trash/*'                                \
+	--exclude '/home/*/.cache/*'                                            \
 	--exclude '/var/tmp/*'
 ```
