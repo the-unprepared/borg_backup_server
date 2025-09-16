@@ -41,8 +41,7 @@ RUN dos2unix /usr/local/bin/startup.sh
 RUN chmod +x /usr/local/bin/startup.sh
 
 # Das Verzeichnis für die Backups als Volume definieren
-VOLUME /home/borguser/repo
+VOLUME /home/borguser
 
 # Den SSH-Dienst starten
 CMD ["/usr/local/bin/startup.sh"]
-
