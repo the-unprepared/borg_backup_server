@@ -65,10 +65,49 @@ if [ -n "$SSH_PUBKEY" ]; then
     fi
     
     chown -R borguser:borguser /home/borguser
-    # chown -R borguser:borguser /home/borguser/.ssh
     chmod 700 /home/borguser/.ssh
     chmod 600 /home/borguser/.ssh/authorized_keys
 fi
+
+
+
+# Contaiern SSH Schlüssel sichern
+echo "  - Prüfe SSH Host Keys..."
+# Wird in .ssh gesichert (host_keys)
+HOST_KEYS_STORAGE="/home/borguser/.ssh/host_keys"
+mkdir -p "$HOST_KEYS_STORAGE"
+
+# Funktion, um Keys zu verwalten
+manage_host_key() {
+    KEY_TYPE=$1
+    KEY_NAME="ssh_host_${KEY_TYPE}_key"
+    STORAGE_PATH="$HOST_KEYS_STORAGE/$KEY_NAME"
+    SYSTEM_PATH="/etc/ssh/$KEY_NAME"
+
+    # Wenn Key im Storage nicht existiert, neu erstellen
+    if [ ! -f "$STORAGE_PATH" ]; then
+        echo "    - Generiere permanenten $KEY_TYPE Key..."
+        ssh-keygen -q -t $KEY_TYPE -f "$STORAGE_PATH" -N "" > /dev/null 2>&1
+    else
+        echo "    - Stelle vorhandenen $KEY_TYPE Key wieder her..."
+    fi
+
+    # 2. Key an den System-Ort kopieren (SSHD erwartet sie in /etc/ssh)
+    cp "$STORAGE_PATH" "$SYSTEM_PATH"
+    cp "$STORAGE_PATH.pub" "$SYSTEM_PATH.pub"
+
+    # 3. Rechte im System korrigieren (Muss root gehören für SSHD!)
+    chown root:root "$SYSTEM_PATH" "$SYSTEM_PATH.pub"
+    chmod 600 "$SYSTEM_PATH"
+    chmod 644 "$SYSTEM_PATH.pub"
+}
+
+manage_host_key rsa
+manage_host_key ed25519
+
+# Rechte vergeben
+chown -R borguser:borguser "$HOST_KEYS_STORAGE"
+
 
 
 # Erstelle das Repository-Verzeichnis und setze Berechtigungen.
