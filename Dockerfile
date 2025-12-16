@@ -1,5 +1,5 @@
 # Basis-Image
-FROM alpine:latest
+FROM alpine:3.22
 
 # Metadaten
 LABEL maintainer="Marcus Schmitt"
