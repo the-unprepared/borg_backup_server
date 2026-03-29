@@ -1,7 +1,3 @@
-# Borg Backup Server
-
-# Borg Backup Server
-
 # 🛡️ Borg Backup Server
 
 Ein minimalistischer und effizienter Backup-Server zum einfachen Speichern deiner [Borg Backup](https://www.borgbackup.org/) Archive über SSH.  
