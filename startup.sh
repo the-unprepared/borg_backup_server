@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 cat << "EOF"
 ______                  ______            _                  _____                          
 | ___ \                 | ___ \          | |                /  ___|                         
@@ -12,11 +11,8 @@ ______                  ______            _                  _____
                  |___/                              |_|                                     
 EOF
 
-
 echo ''
 echo 'Server Start wird durchgeführt.'
-
-
 
 # Setze die Zeitzone, falls angegeben
 if [ -n "$TIMEZONE" ]; then
@@ -24,60 +20,27 @@ if [ -n "$TIMEZONE" ]; then
     ln -sf /usr/share/zoneinfo/$TIMEZONE /etc/localtime
 fi
 
-
-
 # Setze den Repository-Pfad
 REPO="/home/borguser/repo"
 
-
-
-
-
-
-
-# Füge den SSH-Schlüssel hinzu, falls er als Umgebungsvariable gesetzt wurde
-if [ -n "$SSH_PUBKEY" ]; then
-    echo "  - SSH-Schlüssel wurden gesetzt."
+# Füge die SSH-Schlüssel hinzu, falls die Variable gesetzt wurde (unterstützt mehrzeilige Strings)
+if [ -n "$SSH_PUBKEYS" ]; then
+    echo "  - SSH-Schlüssel werden konfiguriert."
     mkdir -p /home/borguser/.ssh
     
-    # Datei löschen, damit alte Schlüssel entfernt werden
-    echo "" > /home/borguser/.ssh/authorized_keys
-
-    # Fügen Sie die Schlüssel hinzu, wenn die Umgebungsvariablen gesetzt sind
-    if [ -n "$SSH_PUBKEY" ]; then
-        echo "$SSH_PUBKEY" >> /home/borguser/.ssh/authorized_keys
-    fi
-
-    if [ -n "$SSH_PUBKEY_2" ]; then
-        echo "$SSH_PUBKEY_2" >> /home/borguser/.ssh/authorized_keys
-    fi
-
-    if [ -n "$SSH_PUBKEY_3" ]; then
-        echo "$SSH_PUBKEY_3" >> /home/borguser/.ssh/authorized_keys
-    fi
-
-    if [ -n "$SSH_PUBKEY_4" ]; then
-        echo "$SSH_PUBKEY_4" >> /home/borguser/.ssh/authorized_keys
-    fi
-
-    if [ -n "$SSH_PUBKEY_5" ]; then
-        echo "$SSH_PUBKEY_5" >> /home/borguser/.ssh/authorized_keys
-    fi
+    # Schreibt alle übergebenen Schlüssel direkt in die Datei (überschreibt alte Einträge sauber)
+    echo "$SSH_PUBKEYS" > /home/borguser/.ssh/authorized_keys
     
     chown -R borguser:borguser /home/borguser
     chmod 700 /home/borguser/.ssh
     chmod 600 /home/borguser/.ssh/authorized_keys
 fi
 
-
-
-# Contaiern SSH Schlüssel sichern
+# Container SSH Host Keys sichern und wiederherstellen
 echo "  - Prüfe SSH Host Keys..."
-# Wird in .ssh gesichert (host_keys)
 HOST_KEYS_STORAGE="/home/borguser/.ssh/host_keys"
 mkdir -p "$HOST_KEYS_STORAGE"
 
-# Funktion, um Keys zu verwalten
 manage_host_key() {
     KEY_TYPE=$1
     KEY_NAME="ssh_host_${KEY_TYPE}_key"
@@ -92,11 +55,11 @@ manage_host_key() {
         echo "    - Stelle vorhandenen $KEY_TYPE Key wieder her..."
     fi
 
-    # 2. Key an den System-Ort kopieren (SSHD erwartet sie in /etc/ssh)
+    # Key an den System-Ort kopieren
     cp "$STORAGE_PATH" "$SYSTEM_PATH"
     cp "$STORAGE_PATH.pub" "$SYSTEM_PATH.pub"
 
-    # 3. Rechte im System korrigieren (Muss root gehören für SSHD!)
+    # Rechte im System korrigieren (SSHD erwartet root-Besitz)
     chown root:root "$SYSTEM_PATH" "$SYSTEM_PATH.pub"
     chmod 600 "$SYSTEM_PATH"
     chmod 644 "$SYSTEM_PATH.pub"
@@ -105,48 +68,39 @@ manage_host_key() {
 manage_host_key rsa
 manage_host_key ed25519
 
-# Rechte vergeben
+# Rechte für den Storage-Ordner vergeben
 chown -R borguser:borguser "$HOST_KEYS_STORAGE"
 
-
-
-# Erstelle das Repository-Verzeichnis und setze Berechtigungen.
+# Erstelle das Repository-Verzeichnis und setze Berechtigungen
 mkdir -p "$REPO"
-chown borguser:borguser "$REPO"
+chown -R borguser:borguser "$REPO"
 chmod 700 -R "/home/borguser"
 
-
-
-# Prüfe, ob die REPOKEY-Variable gesetzt ist und initialisiere das Repo.
+# Prüfe, ob die REPOKEY-Variable gesetzt ist und initialisiere das Repo
 if [ -n "$REPOKEY" ]; then
     echo "  - BORG_PASSPHRASE wurde gesetzt."
-    echo "    - Initialisiere das Repository."
     export BORG_PASSPHRASE="$REPOKEY"
 
-    # Prüfe, ob das Repository bereits initialisiert wurde.
+    # Prüfe, ob das Repository bereits initialisiert wurde
     if ! su - borguser -c "BORG_PASSPHRASE=$REPOKEY borg info \"$REPO\" > /dev/null 2>&1"; then
         echo "    - Repository nicht gefunden. Initialisiere neues Repository."
-        su - borguser -c "BORG_PASSPHRASE=$REPOKEY borg init --encryption=repokey-blake2 \"$REPO\""
+        # Ausgabe von borg init wird ins Leere umgeleitet, um Logs sauber zu halten
+        su - borguser -c "BORG_PASSPHRASE=$REPOKEY borg init --encryption=repokey-blake2 \"$REPO\" > /dev/null 2>&1"
     else
         echo "    - Repository existiert bereits."
     fi
 fi
-
-
 
 # Richte die optionale Bereinigung (borg prune) ein
 if [ -n "$PRUNE_DAYS" ] && [ -n "$PRUNE_TIME" ] && [ -n "$REPOKEY" ]; then
     MINUTE=${PRUNE_TIME#*:}
     HOUR=${PRUNE_TIME%%:*}
 
-    # Definiere einen eindeutigen Kommentar für den Cron-Job, um ihn später zu finden.
     CRON_COMMENT="# Borg Prune Cron-Job"
-
-    # Erstelle den vollständigen Borg-Prune-Befehl als String.
     PRUNE_COMMAND="BORG_PASSPHRASE=$REPOKEY /usr/bin/borg prune --list --stats --show-rc --keep-daily $PRUNE_DAYS $REPO"
     
-    # Setzt den Cron-Job und entfernt den vorhandenen.
-    su - borguser -c "(crontab -l 2>/dev/null | grep -v \"$CRON_COMMENT\" ; echo \"$MINUTE $HOUR * * * $PRUNE_COMMAND $CRON_COMMENT\") | crontab -" 2>/dev/null
+    # Cron-Job setzen
+    su - borguser -c "(crontab -l 2>/dev/null | grep -v \"$CRON_COMMENT\" ; echo \"$MINUTE $HOUR * * * $PRUNE_COMMAND $CRON_COMMENT\") | crontab - > /dev/null 2>&1"
     
     echo "  - Cron-Job erfolgreich erstellt:"
     echo "    - Bereinigung jeden Tag um $PRUNE_TIME."
@@ -155,13 +109,12 @@ if [ -n "$PRUNE_DAYS" ] && [ -n "$PRUNE_TIME" ] && [ -n "$REPOKEY" ]; then
     # Starten des Cron-Daemons
     crond
 else
-    echo "  - REPOKEY, PRUNE_DAYS oder PRUNE_TIME ist nicht gesetzt. Keine Bereinigung konfiguriert."
+    echo "  - Keine vollständige Bereinigungs-Konfiguration gefunden (PRUNE_DAYS, PRUNE_TIME, REPOKEY). Überspringe Prune-Job."
 fi
-
-
 
 echo "  - Starte den SSH-Dienst."
 echo "Server Start abgeschlossen."
 echo ""
-# Starte den SSH-Daemon im Vordergrund, damit der Container nicht beendet wird.
+
+# Starte den SSH-Daemon im Vordergrund (exec ersetzt den Shell-Prozess für sauberes Stoppen)
 exec /usr/sbin/sshd -D -e
