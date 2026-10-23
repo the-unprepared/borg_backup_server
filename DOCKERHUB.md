@@ -64,7 +64,7 @@ Nach dem Start zeigt `docker logs borg_backup_server` die Fingerprints der Host-
 
 | Variable | Status | Beschreibung |
 | --- | --- | --- |
-| `SSH_PUBKEY_<NAME>` | **Erforderlich** (mind. ein Schlüssel) | Ein Public Key pro Variable, beliebig viele möglich. |
+| `SSH_PUBKEY_<NAME>` | **Erforderlich** (mind. ein Schlüssel) | Ein Public Key pro Variable, beliebig viele möglich. Der Name darf nur Buchstaben, Ziffern und `_` enthalten, also `SSH_PUBKEY_DOCKER_SERVER` statt `SSH_PUBKEY_DOCKER-SERVER`. |
 | `SSH_PUBKEYS` | Optional | Ältere Variante: mehrere Keys in einer Variable. Mehrzeilig nur in der YAML-Mapping-Schreibweise (`SSH_PUBKEYS: \|`). |
 | `REPOKEY` | Optional | Passwort des Repositorys (`repokey-blake2`). Ist es gesetzt, wird das Repository beim ersten Start automatisch angelegt. Sonst legst du es vom Client aus mit `borg init` an. |
 | `REPOKEY_FILE` | Optional | Pfad zu einer Datei mit dem Passwort, z. B. ein Docker Secret (`/run/secrets/repokey`). Wird verwendet, wenn `REPOKEY` nicht gesetzt ist. |

@@ -139,6 +139,10 @@ fi
 : > "$AUTH_KEYS.new"
 KEY_COUNT=0
 KEY_VARS=$(env | sed -n 's/^\(SSH_PUBKEYS\{0,1\}\(_[A-Za-z0-9_]*\)\{0,1\}\)=.*/\1/p' | sort -u)
+# Namen mit anderen Zeichen (z. B. Bindestrich) kann die Shell nicht auslesen
+for VAR in $(env | grep -o '^SSH_PUBKEY[^=]*' | grep -v '^SSH_PUBKEYS\{0,1\}\(_[A-Za-z0-9_]*\)\{0,1\}$' | sort -u); do
+    echo "    - WARNUNG ($VAR): Ungültiger Variablenname ignoriert, erlaubt sind nur A-Z, 0-9 und _ (z. B. $(printf '%s' "$VAR" | tr -c 'A-Za-z0-9_' '_'))."
+done
 for VAR in $KEY_VARS; do
     eval "VALUE=\${$VAR}"
     [ -n "$VALUE" ] || continue
