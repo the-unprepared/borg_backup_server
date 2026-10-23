@@ -2,42 +2,37 @@
 FROM alpine:3.22
 
 # Metadaten
-LABEL maintainer="Marcus Schmitt"
-LABEL description="Borg Backup Server"
+LABEL org.opencontainers.image.title="Borg Backup Server" \
+      org.opencontainers.image.description="Minimalistischer Borg Backup Server über SSH" \
+      org.opencontainers.image.authors="Marcus Schmitt" \
+      org.opencontainers.image.source="https://github.com/the-unprepared/borg_backup_server" \
+      org.opencontainers.image.licenses="BSD-3-Clause"
 
-# System aktualisieren und benötigte Pakete installieren
-RUN apk update && apk add --no-cache \
+# Benötigte Pakete installieren (--no-cache macht apk update und das Löschen des Caches überflüssig)
+RUN apk add --no-cache \
     openssh \
     borgbackup \
-    shadow \
     cronie \
     tzdata \
-    dos2unix \
-    tini \
-    && rm -rf /var/cache/apk/*
+    tini
 
-# Benutzer erstellen
-RUN adduser -D -s /bin/sh borguser
+# Benutzer erstellen und für die SSH-Anmeldung freischalten ("*" statt "!"), Passwort-Login bleibt unmöglich
+RUN adduser -D -s /bin/sh borguser \
+    && sed -i 's/^borguser:!:/borguser:*:/' /etc/shadow
 
-# SSH-Verzeichnis für den Benutzer erstellen und Berechtigungen setzen
-RUN mkdir -p /home/borguser/.ssh && chown -R borguser:borguser /home/borguser
+# SSH-Konfiguration (Host-Keys und authorized_keys werden dynamisch über startup.sh erzeugt)
+COPY sshd_borg.conf /etc/ssh/sshd_config.d/10-borg.conf
 
-# Benutzerkonto für SSH-Anmeldung freischalten, aber das Passwort-Login deaktivieren
-RUN usermod -p '*' borguser
+# Skripte in den Container kopieren, Zeilenenden auf Unix-Format konvertieren und ausführbar machen
+COPY startup.sh borg-prune.sh /usr/local/bin/
+RUN sed -i 's/\r$//' /usr/local/bin/startup.sh /usr/local/bin/borg-prune.sh /etc/ssh/sshd_config.d/10-borg.conf \
+    && chmod 755 /usr/local/bin/startup.sh /usr/local/bin/borg-prune.sh
 
-# SSH-Konfiguration anpassen (Host-Keys werden dynamisch über startup.sh erzeugt)
-RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config \
-    && sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config \
-    && echo "AllowUsers borguser" >> /etc/ssh/sshd_config
+# Repository, Host-Keys und Borg-Cache liegen hier
+VOLUME /home/borguser
 
 # Port, über den Borg kommunizieren wird
 EXPOSE 22
-
-# Das Start-Skript in den Container kopieren
-COPY startup.sh /usr/local/bin/startup.sh
-
-# Konvertiere Zeilenenden auf Unix-Format und setze Ausführungsrechte in einem Schritt
-RUN dos2unix /usr/local/bin/startup.sh && chmod +x /usr/local/bin/startup.sh
 
 ENTRYPOINT ["/sbin/tini", "--"]
 
