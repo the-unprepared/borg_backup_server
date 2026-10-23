@@ -138,12 +138,10 @@ fi
 
 : > "$AUTH_KEYS.new"
 KEY_COUNT=0
-KEY_VARS_USED=0
 KEY_VARS=$(env | sed -n 's/^\(SSH_PUBKEYS\{0,1\}\(_[A-Za-z0-9_]*\)\{0,1\}\)=.*/\1/p' | sort -u)
 for VAR in $KEY_VARS; do
     eval "VALUE=\${$VAR}"
     [ -n "$VALUE" ] || continue
-    KEY_VARS_USED=1
     split_keys "$VALUE" > "$AUTH_KEYS.split"
     if [ ! -s "$AUTH_KEYS.split" ]; then
         echo "    - WARNUNG ($VAR): Kein gültiger Schlüssel gefunden."
@@ -153,13 +151,11 @@ for VAR in $KEY_VARS; do
     done < "$AUTH_KEYS.split"
 done
 
-# Fallback für ältere Installationen: authorized_keys im Volume, wenn keine Variable gesetzt ist
-if [ "$KEY_VARS_USED" -eq 0 ] && [ -f "$LEGACY_AUTH_KEYS" ]; then
-    echo "    - Keine SSH_PUBKEY*-Variable gesetzt, übernehme $LEGACY_AUTH_KEYS"
-    split_keys "$(cat "$LEGACY_AUTH_KEYS")" > "$AUTH_KEYS.split"
-    while IFS= read -r KEY; do
-        add_key "authorized_keys" "$KEY"
-    done < "$AUTH_KEYS.split"
+# Ältere Versionen haben die authorized_keys im Volume abgelegt. Sie wird nicht mehr verwendet und
+# entfernt, damit dort keine veralteten Schlüssel liegen bleiben.
+if [ -f "$LEGACY_AUTH_KEYS" ]; then
+    rm -f "$LEGACY_AUTH_KEYS"
+    echo "    - Veraltete $LEGACY_AUTH_KEYS entfernt (Schlüssel kommen nur noch aus SSH_PUBKEY*)."
 fi
 
 mv "$AUTH_KEYS.new" "$AUTH_KEYS"

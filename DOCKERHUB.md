@@ -16,6 +16,7 @@ Besonders gut geeignet für NAS-Systeme mit Docker-Unterstützung. Dieser Server
 - Mehrere Rechner bzw. Schlüssel, jeweils in einer eigenen Variable
 - Clients dürfen ausschließlich `borg serve` ausführen, keine Shell
 - Optional: Repository automatisch anlegen, tägliche Bereinigung (`prune` + `compact`), Append-only-Modus
+- Schlüssel werden bei jedem Start neu aus der Konfiguration erzeugt: Variable entfernen, Container neu erstellen, Zugriff weg
 - Host-Keys bleiben über Updates hinweg erhalten
 - Klein: basiert auf Alpine Linux
 
@@ -148,7 +149,7 @@ Volume, Repository und Host-Keys bleiben erhalten, der Fingerprint des Servers �
 
 **Hinweise für ältere Versionen (vor Oktober 2026):**
 - Clients haben keine Shell mehr, sondern nur noch Borg-Zugriff. Wer die Shell braucht, setzt `SSH_RESTRICT=false`.
-- Ist keine `SSH_PUBKEY*`-Variable gesetzt, werden die Schlüssel aus der alten `authorized_keys` im Volume übernommen.
+- SSH-Schlüssel kommen ausschließlich aus den `SSH_PUBKEY*`-Variablen und werden bei jedem Start neu eingelesen. Die alte `authorized_keys` im Volume wird gelöscht. Trage deine Schlüssel also vor dem Update als Variablen ein.
 - Das alte Beispiel `- SSH_PUBKEYS=|` funktioniert jetzt, empfohlen ist aber `SSH_PUBKEY_<NAME>`.
 
 ---

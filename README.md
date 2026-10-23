@@ -87,7 +87,7 @@ In der Listen-Schreibweise (`- SSH_PUBKEYS=|`) macht YAML aus allen Zeilen eine 
 
 - **Nur Borg:** Jeder Schlüssel ist auf `borg serve --restrict-to-repository /home/borguser/repo` beschränkt. Ein gestohlener Client-Schlüssel erlaubt keine Shell auf dem Server, aber (ohne `APPEND_ONLY`) das Löschen von Backups.
 - **Append-only und Bereinigung:** Im Append-only-Modus kann ein Client Archive zwar scheinbar löschen, die Daten bleiben aber erhalten, bis auf dem Server `borg compact` läuft. Das passiert bei gesetztem `PRUNE_DAYS` jede Nacht. Für maximalen Schutz `PRUNE_*` weglassen und Bereinigungen manuell nach einer Kontrolle durchführen.
-- **Keys kommen nur aus der Konfiguration:** Die `authorized_keys` wird bei jedem Start neu erzeugt. Entfernst du eine `SSH_PUBKEY_*`-Variable und erstellst den Container neu, ist der Zugriff für diesen Schlüssel sofort weg.
+- **Keys kommen nur aus der Konfiguration:** Die `authorized_keys` wird bei jedem Start ausschließlich aus den `SSH_PUBKEY*`-Variablen neu erzeugt. Entfernst du eine Variable und erstellst den Container neu (`docker compose up -d`), ist der Zugriff für diesen Schlüssel sofort weg. Ist keine Variable gesetzt, ist keine Anmeldung möglich.
 - **Host-Key prüfen:** Beim Start werden die Fingerprints der SSH-Host-Keys im Log ausgegeben. Vergleiche sie bei der ersten Verbindung mit der Anzeige deines Clients. Die Host-Keys liegen dauerhaft im Volume, damit sich der Fingerprint bei Updates nicht ändert.
 - **Repository-Schlüssel sichern:** Bei `repokey` liegt der Schlüssel im Repository. Ist das Repository beschädigt, sind ohne Schlüssel-Backup alle Daten verloren. Exportiere ihn einmalig und bewahre ihn getrennt vom Server auf:
 
@@ -191,5 +191,5 @@ borg umount ~/borg_mount
 ## ⬆️ Hinweise zum Update von älteren Versionen
 
 - Bestehende Volumes, Repositories und Host-Keys werden weiterverwendet.
-- Ist keine `SSH_PUBKEY*`-Variable gesetzt, werden die Schlüssel aus der alten `/home/borguser/.ssh/authorized_keys` im Volume übernommen.
+- SSH-Schlüssel kommen ausschließlich aus den `SSH_PUBKEY*`-Variablen. Die alte `/home/borguser/.ssh/authorized_keys` im Volume wird beim ersten Start gelöscht. Trage deine Schlüssel also vor dem Update als Variablen ein.
 - Clients haben keine Shell mehr, sondern nur noch Borg-Zugriff. Wer die Shell braucht, setzt `SSH_RESTRICT=false`.
