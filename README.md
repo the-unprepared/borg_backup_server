@@ -50,7 +50,7 @@ Beim Start zeigt das Log (`docker logs borg_backup_server`) für jeden Schlüsse
 
 | Variable | Status | Beschreibung |
 | --- | --- | --- |
-| `SSH_PUBKEY_<NAME>` | **Erforderlich** (mind. ein Schlüssel) | Ein Public Key pro Variable, z. B. `SSH_PUBKEY_1`, `SSH_PUBKEY_LAPTOP`. Beliebig viele möglich. |
+| `SSH_PUBKEY_<NAME>` | **Erforderlich** (mind. ein Schlüssel) | Ein Public Key pro Variable, z. B. `SSH_PUBKEY_1`, `SSH_PUBKEY_LAPTOP`. Beliebig viele möglich. Der Name darf nur Buchstaben, Ziffern und `_` enthalten, also `SSH_PUBKEY_DOCKER_SERVER` statt `SSH_PUBKEY_DOCKER-SERVER`. |
 | `SSH_PUBKEYS` | Optional | Ältere Variante: mehrere Keys in einer Variable. Funktioniert weiterhin (auch versehentlich in eine Zeile zusammengefaltete Keys werden erkannt), siehe [Mehrere Keys in einer Variable](#mehrere-keys-in-einer-variable). |
 | `REPOKEY` | Optional | Das Passwort, mit dem das Repository verschlüsselt wird (`repokey-blake2`). Ist dies gesetzt, wird das Repo beim ersten Start automatisch angelegt. Ohne diesen Key musst du das Repo selbst vom Client aus initialisieren (`borg init`). _Hinweis: Der Key steht im Klartext in der Compose-Datei und ist per `docker inspect` sichtbar. Nur auf eigener, sicherer Hardware setzen oder `REPOKEY_FILE` verwenden._ |
 | `REPOKEY_FILE` | Optional | Pfad zu einer Datei mit dem Passwort, z. B. ein [Docker Secret](https://docs.docker.com/compose/how-tos/use-secrets/) (`/run/secrets/repokey`). Wird verwendet, wenn `REPOKEY` nicht gesetzt ist. |
